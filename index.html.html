@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selayar Islands Endemic Birds - Interactive Map</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            overflow: hidden;
+        }
+        
+        #map {
+            height: 100%;
+            width: 100%;
+        }
+        
+        .leaflet-popup-content-wrapper {
+            border-radius: 10px;
+            padding: 0;
+        }
+        
+        .leaflet-popup-content {
+            margin: 0;
+            width: 380px !important;
+            height: 600px !important;
+            overflow-y: auto;
+        }
+        
+        .popup-header {
+            background: linear-gradient(135deg, #2c5f2d 0%, #4a9d4f 100%);
+            color: white;
+            padding: 15px 20px;
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .popup-header h3 {
+            margin: 0;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .popup-header p {
+            margin: 5px 0 0 0;
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .popup-body {
+            padding: 15px 20px;
+        }
+        
+        .species-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #4a9d4f;
+        }
+        
+        .species-card:last-child {
+            margin-bottom: 0;
+        }
+        
+        .species-name {
+            font-size: 15px;
+            font-weight: 600;
+            color: #2c5f2d;
+            margin-bottom: 3px;
+        }
+        
+        .scientific-name {
+            font-size: 12px;
+            font-style: italic;
+            color: #666;
+            margin-bottom: 8px;
+        }
+        
+        .status-badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .status-lc {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-en {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-ne {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        
+        .description {
+            font-size: 13px;
+            color: #333;
+            line-height: 1.5;
+            margin-bottom: 10px;
+        }
+        
+        .habitat {
+            font-size: 12px;
+            color: #555;
+            background: white;
+            padding: 8px;
+            border-radius: 5px;
+            margin-bottom: 12px;
+        }
+        
+        .media-container {
+            margin-top: 12px;
+            text-align: center;
+        }
+        
+        .media-container iframe {
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            width: 100%;
+            max-width: 320px;
+        }
+        
+        .no-endemic {
+            text-align: center;
+            padding: 20px;
+            color: #666;
+            font-style: italic;
+        }
+        
+        .leaflet-popup-close-button {
+            font-size: 24px !important;
+            padding: 8px 10px 0 0 !important;
+        }
+        
+        /* Custom marker styles */
+        .bird-marker {
+            background: #4a9d4f;
+            border: 3px solid white;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            cursor: pointer;
+        }
+        
+        .bird-marker:hover {
+            transform: scale(1.1);
+            transition: transform 0.2s;
+        }
+        
+        .bird-icon {
+            color: white;
+            font-size: 16px;
+        }
+        
+        /* Intro overlay styles */
+        .intro-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.5s;
+        }
+        
+        .intro-content {
+            background: white;
+            padding: 40px 50px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+        
+        .intro-content h2 {
+            color: #2c5f2d;
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+        
+        .intro-content p {
+            color: #666;
+            font-size: 16px;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        
+        .intro-button {
+            background: linear-gradient(135deg, #2c5f2d 0%, #4a9d4f 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 16px;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .intro-button:hover {
+            transform: scale(1.05);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .fade-out {
+            animation: fadeOut 0.5s;
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; }
+            to { opacity: 0; }
+        }
+        
+        /* Footer styles */
+        .footer {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1000;
+            background: white;
+            padding: 15px 25px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            max-width: 600px;
+            text-align: center;
+        }
+        
+        .footer h1 {
+            font-size: 18px;
+            color: #2c5f2d;
+            margin-bottom: 8px;
+        }
+        
+        .footer .subtitle {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+        }
+        
+        .footer .credits {
+            font-size: 11px;
+            color: #555;
+            border-top: 1px solid #e0e0e0;
+            padding-top: 10px;
+            margin-top: 10px;
+        }
+        
+        .footer .credits strong {
+            color: #2c5f2d;
+        }
+        
+        .footer .contact {
+            margin-top: 5px;
+        }
+        
+        .footer .contact a {
+            color: #4a9d4f;
+            text-decoration: none;
+            margin: 0 5px;
+        }
+        
+        .footer .contact a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <!-- Intro Overlay -->
+    <div class="intro-overlay" id="introOverlay">
+        <div class="intro-content">
+            <h2>🦜 Selamat Datang!</h2>
+            <p><strong>Klik untuk menjelajah</strong> peta interaktif burung endemik Kepulauan Selayar. Klik setiap marker untuk melihat informasi spesies!</p>
+            <button class="intro-button" onclick="closeIntro()">Mulai Menjelajah</button>
+        </div>
+    </div>
+    
+    <div class="footer">
+        <h1>🦜 Burung Endemik Kepulauan Selayar</h1>
+        <p class="subtitle">Sulawesi Selatan, Indonesia - Source: ebird.org</p>
+        <div class="credits">
+            <strong>Dibuat Oleh:</strong> Tim KKN-PPM UGM Gelora Selayar 2025<br>
+            <div class="contact">
+                <strong>Kontak:</strong> 
+                <a href="mailto:geloraselayar2025@gmail.com">geloraselayar2025@gmail.com</a> | 
+                <a href="https://instagram.com/geloraselayar" target="_blank">@geloraselayar</a>
+            </div>
+        </div>
+    </div>
+    
+    <div id="map"></div>
+
+    <script>
+        // Function to close intro overlay
+        function closeIntro() {
+            const overlay = document.getElementById('introOverlay');
+            overlay.classList.add('fade-out');
+            setTimeout(() => {
+                overlay.style.display = 'none';
+            }, 500);
+        }
+
+        // Species database with detailed information
+        const speciesDatabase = {
+            "Sulawesi Myzomela": {
+                scientific: "Myzomela chloroptera",
+                status: "Least Concern",
+                statusClass: "status-lc",
+                description: "Burung pemakan nektar kecil berwarna merah dengan sayap gelap; paruh ramping melengkung.",
+                habitat: "Habitat di hutan lembap, mangrove, hutan pegunungan.",
+                media: '<iframe src="https://macaulaylibrary.org/asset/645837432/embed" height="393" width="320" frameborder="0" allowfullscreen></iframe>'
+            },
+            "Spotted Kestrel": {
+                scientific: "Falco moluccensis",
+                status: "Least Concern",
+                statusClass: "status-lc",
+                description: "Alap-alap kecil dengan bercak putih dan ekor abu-abu; pemangsa serangga dan reptil kecil.",
+                habitat: "Habitat di padang rumput, pertanian, tepi hutan.",
+                media: '<iframe src="https://macaulaylibrary.org/asset/642468203/embed" height="250" width="320" frameborder="0" allowfullscreen></iframe>'
+            },
+            "Uniform Swiftlet": {
+                scientific: "Collocalia esculenta",
+                status: "Least Concern",
+                statusClass: "status-lc",
+                description: "Walet kecil hitam kebiruan mengkilap dengan bagian bawah pucat; terbang cepat menangkap serangga.",
+                habitat: "Asia Tenggara hingga Oceania termasuk Sulawesi; hutan, area terbuka, tebing.",
+                media: '<iframe src="https://macaulaylibrary.org/asset/393292111/embed" height="292" width="320" frameborder="0" allowfullscreen></iframe>'
+            },
+            "Tanahjampea Monarch": {
+                scientific: "Symposiachrus everetti",
+                status: "Endangered",
+                statusClass: "status-en",
+                description: "Burung kecil monarki dengan warna tubuh kontras dan perilaku aktif; ekor putih.",
+                habitat: "Endemik Pulau Tanahjampea; hutan primer dan sekunder lembap.",
+                media: '<iframe src="https://macaulaylibrary.org/asset/625645330/embed" height="339" width="320" frameborder="0" allowfullscreen></iframe>'
+            },
+            "Flores Sea Sunbird": {
+                scientific: "Nectariniidae sp. (Flores Sea form)",
+                status: "Not Evaluated",
+                statusClass: "status-ne",
+                description: "Burung madu kecil berwarna cerah; paruh melengkung untuk menghisap nektar.",
+                habitat: "Pulau-pulau kecil Laut Flores (Tanahjampea, Kalao, Kalaotoa).",
+                media: '<iframe src="https://macaulaylibrary.org/asset/645309487/embed" height="332" width="320" frameborder="0" allowfullscreen></iframe>'
+            },
+            "Sulawesi Blue Flycatcher": {
+                scientific: "Cyornis omissus",
+                status: "Least Concern",
+                statusClass: "status-lc",
+                description: "Burung sikatan berwarna biru cerah pada jantan; pemakan serangga.",
+                habitat: "Endemik Sulawesi dan pulau di selatan; hutan hujan lembap.",
+                media: '<iframe src="https://macaulaylibrary.org/asset/631349774/embed" height="387" width="320" frameborder="0" allowfullscreen></iframe>'
+            },
+            "Tenggara Whistler": {
+                scientific: "Pachycephala calliope",
+                status: "Least Concern",
+                statusClass: "status-lc",
+                description: "Whistler berukuran sedang dengan dada kemerahan; suara nyaring.",
+                habitat: "Indonesia Tenggara termasuk Selayar, Tanahjampea; hutan tropis dan semak.",
+                media: '<iframe src="https://macaulaylibrary.org/asset/729195/embed" height="267" width="320" frameborder="0" allowfullscreen></iframe>'
+            },
+            "Flores Sea Cuckoo-Dove": {
+                scientific: "Macropygia macassariensis",
+                status: "Least Concern",
+                statusClass: "status-lc",
+                description: "Merpati laut berukuran sedang dengan ekor panjang khas genus Macropygia.",
+                habitat: "Sulawesi, Selayar, Tanahjampea, Kalao, Kalaotoa; hutan primer dan tepi hutan.",
+                media: '<iframe src="https://macaulaylibrary.org/asset/645309539/embed" height="367" width="320" frameborder="0" allowfullscreen></iframe>'
+            },
+            "Rufous-sided Gerygone": {
+                scientific: "Gerygone dorsalis (complex)",
+                status: "Least Concern",
+                statusClass: "status-lc",
+                description: "Burung kecil pemakan serangga dengan sisi tubuh rufous dan bagian atas kecoklatan.",
+                habitat: "Pulau-pulau kecil di Indonesia Timur termasuk selatan Sulawesi.",
+                media: '<iframe src="https://macaulaylibrary.org/asset/626552351/embed" height="348" width="320" frameborder="0" allowfullscreen></iframe>'
+            },
+            "Elegant Pitta": {
+                scientific: "Pitta elegans",
+                status: "Least Concern",
+                statusClass: "status-lc",
+                description: "Pitta warna-warni dengan hijau, merah, hitam, dan buff; penghuni hutan rapat.",
+                habitat: "Kepulauan Sunda Kecil dan Maluku selatan termasuk Laut Flores.",
+                media: '<iframe src="https://macaulaylibrary.org/asset/626551933/embed" height="327" width="320" frameborder="0" allowfullscreen></iframe>'
+            },
+            "Kalao Blue Flycatcher": {
+                scientific: "Cyornis sp. (Kalao form)",
+                status: "Least Concern",
+                statusClass: "status-lc",
+                description: "Burung sikatan biru endemik pulau dengan karakteristik unik populasi Kalao.",
+                habitat: "Endemik Pulau Kalao; hutan lembap dan area semi-terbuka.",
+                media: '<iframe src="https://macaulaylibrary.org/asset/645305170/embed" height="323" width="320" frameborder="0" allowfullscreen></iframe>'
+            }
+        };
+
+        // Initialize the map
+        const map = L.map('map').setView([-7.0, 121.0], 8);
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Custom icon function
+        function createCustomIcon() {
+            return L.divIcon({
+                className: 'custom-div-icon',
+                html: '<div class="bird-marker"><span class="bird-icon">🦜</span></div>',
+                iconSize: [30, 30],
+                iconAnchor: [15, 15],
+                popupAnchor: [0, -15]
+            });
+        }
+
+        // Function to create popup content
+        function createPopupContent(location, speciesList) {
+            let popupHTML = `
+                <div class="popup-header">
+                    <h3>${location}</h3>
+                    <p>${speciesList.length} spesies teramati</p>
+                </div>
+                <div class="popup-body">
+            `;
+
+            if (speciesList[0] === "Cosmopolitan seabirds (no endemics)") {
+                popupHTML += `
+                    <div class="no-endemic">
+                        <p>Pulau ini didominasi oleh burung laut kosmopolitan tanpa endemik daratan yang tercatat.</p>
+                    </div>
+                `;
+            } else {
+                speciesList.forEach(species => {
+                    const info = speciesDatabase[species];
+                    if (info) {
+                        popupHTML += `
+                            <div class="species-card">
+                                <div class="species-name">${species}</div>
+                                <div class="scientific-name">${info.scientific}</div>
+                                <span class="status-badge ${info.statusClass}">${info.status}</span>
+                                <div class="description">${info.description}</div>
+                                <div class="habitat"><strong>Habitat:</strong> ${info.habitat}</div>
+                                <div class="media-container">
+                                    ${info.media}
+                                </div>
+                            </div>
+                        `;
+                    }
+                });
+            }
+
+            popupHTML += '</div>';
+            return popupHTML;
+        }
+
+        // GeoJSON data
+        const birdData = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [120.51469, -5.83857]
+                    },
+                    "properties": {
+                        "location": "Pamatata Port",
+                        "species_list": [
+                            "Sulawesi Myzomela",
+                            "Spotted Kestrel",
+                            "Uniform Swiftlet"
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [120.68333, -7.08639]
+                    },
+                    "properties": {
+                        "location": "Tanahjampea",
+                        "species_list": [
+                            "Tanahjampea Monarch",
+                            "Flores Sea Sunbird",
+                            "Sulawesi Blue Flycatcher",
+                            "Tenggara Whistler",
+                            "Elegant Pitta",
+                            "Flores Sea Cuckoo-Dove"
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [120.92000, -7.29619]
+                    },
+                    "properties": {
+                        "location": "Pulau Kalao",
+                        "species_list": [
+                            "Kalao Blue Flycatcher",
+                            "Flores Sea Sunbird",
+                            "Flores Sea Cuckoo-Dove",
+                            "Elegant Pitta",
+                            "Spotted Kestrel"
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [121.7920, -7.3770]
+                    },
+                    "properties": {
+                        "location": "Pulau Kalaotoa",
+                        "species_list": [
+                            "Flores Sea Sunbird",
+                            "Rufous-sided Gerygone",
+                            "Tenggara Whistler",
+                            "Elegant Pitta",
+                            "Flores Sea Cuckoo-Dove"
+                        ]
+                    }
+                },
+                {
+                    "type": "Feature",
+                    "geometry": {
+                        "type": "Point",
+                        "coordinates": [122.21972, -6.90194]
+                    },
+                    "properties": {
+                        "location": "Kakabia Island",
+                        "species_list": [
+                            "Cosmopolitan seabirds (no endemics)"
+                        ]
+                    }
+                }
+            ]
+        };
+
+        // Add GeoJSON layer to map
+        L.geoJSON(birdData, {
+            pointToLayer: function(feature, latlng) {
+                return L.marker(latlng, { icon: createCustomIcon() });
+            },
+            onEachFeature: function(feature, layer) {
+                const popupContent = createPopupContent(
+                    feature.properties.location,
+                    feature.properties.species_list
+                );
+                layer.bindPopup(popupContent, {
+                    maxWidth: 400,
+                    className: 'custom-popup'
+                });
+            }
+        }).addTo(map);
+
+        // Fit map to show all markers
+        const bounds = L.latLngBounds(
+            birdData.features.map(f => [f.geometry.coordinates[1], f.geometry.coordinates[0]])
+        );
+        map.fitBounds(bounds, { padding: [50, 50] });
+    </script>
+</body>
+</html>
